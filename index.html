@@ -19,8 +19,23 @@
             align-items: center;
             justify-content: center;
         }
+        #play {
+            padding: .5rem 1rem;
+            background-color: #3E3E3E;
+            border: 4px solid #0DBC79;
+            color: #0DBC79;
+        }
+        #play:active {
+            background-color: #0DBC79;
+            color: #3E3E3E;
+        }
     </style>
-    <canvas></canvas>
+    <div>
+        <canvas></canvas>
+        <div>
+            <button id="play">Play</button>
+        </div>
+    </div>
     <script src="selectable-waveform.js"></script>
 </body>
 </html>

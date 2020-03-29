@@ -30,8 +30,8 @@ const quantize = (arr) => {
   return arr.map(sample => sample > 0 ? Math.ceil(sample) : Math.floor(sample))
 }
 
-const isBetween = (target, a, b) => {
-  return (target < a && target > b) || (target > a && target < b)
+const isSelected = (x) => {
+  return x + begin >= selectionStart && x + begin <= selectionEnd
 }
 
 const renderArray = (arr) => {
@@ -40,13 +40,9 @@ const renderArray = (arr) => {
     const rectW = 1
     const rectH = arr[x]
 
-
     if (selectionStart 
         && selectionEnd 
-        && isBetween(
-          begin + x,
-          selectionStart,
-          selectionEnd)) {
+        && isSelected(x)) {
       ctx.fillStyle = color
       ctx.fillRect(x,0,1,h)
       ctx.fillStyle = background
@@ -65,16 +61,18 @@ const drawWave = (wave, begin) => {
 
 let begin = 0
 let wave
+let buffer
 
 fetch('snd.wav')
 .then(response => response.arrayBuffer())
 .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
-.then(audioBuffer => audioBuffer.getChannelData(0))
-.then(leftChannel => {
-  wave = amplify(normalize(leftChannel))
+.then(audioBuffer => {
+  const channelData = audioBuffer.getChannelData(0)
+  wave = amplify(normalize(channelData))
   drawWave(wave, begin)
-})
 
+  buffer = audioBuffer
+})
 
 const handleScrollCanvas = (e) => {
   const deltaX = Math.floor(e.deltaY)
@@ -98,15 +96,18 @@ canvas.onmousedown = (e) => {
   selectionEnd = null
 
   const rect = canvas.getBoundingClientRect()
-  const startX = Math.floor(e.clientX - rect.left)
+  const anchorX = Math.floor(e.clientX - rect.left)
 
-  selectionStart = begin + startX
+  const anchor = begin + anchorX
 
   drawWave(wave, begin)
 
   window.onmousemove = (e) => {
-    const endX = Math.floor(e.clientX - rect.left)
-    selectionEnd = begin + endX
+    const targetX = Math.floor(e.clientX - rect.left) 
+    const target = begin + targetX
+
+    selectionStart = Math.min(anchor, target)
+    selectionEnd = Math.max(anchor, target)
 
     drawWave(wave, begin)
   }
@@ -114,4 +115,22 @@ canvas.onmousedown = (e) => {
 
 window.onmouseup = () => {
   window.onmousemove = null
+}
+
+const button = document.querySelector('#play')
+
+button.onclick = () => {
+  audioCtx.resume()
+
+  const startSample = selectionStart === null ? 0 : selectionStart
+  const endSample = selectionEnd === null ? 0 : selectionEnd
+  const durationSamples = endSample - startSample
+
+  const startSecs = startSample / buffer.sampleRate
+  const durationSecs = durationSamples / buffer.sampleRate
+
+  const buf = audioCtx.createBufferSource()
+  buf.buffer = buffer
+  buf.connect(audioCtx.destination)
+  buf.start(0, startSecs, durationSecs)
 }
