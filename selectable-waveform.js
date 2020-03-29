@@ -98,20 +98,19 @@ canvas.onmousedown = (e) => {
   selectionEnd = null
 
   const rect = canvas.getBoundingClientRect()
-  const anchorX = Math.floor(e.clientX - rect.left)
-
-  const anchor = begin + anchorX
+  const anchorX = Math.floor(e.clientX - rect.left - 4)
+  const anchorSample = begin + anchorX
 
   drawWave(wave, begin)
 
   window.onmousemove = (e) => {
     e.preventDefault()
 
-    const targetX = Math.floor(e.clientX - rect.left) 
-    const target = begin + targetX
+    const targetX = Math.floor(e.clientX - rect.left - 4)
+    const targetSample = begin + targetX
 
-    selectionStart = Math.min(anchor, target)
-    selectionEnd = Math.max(anchor, target)
+    selectionStart = Math.min(anchorSample, targetSample)
+    selectionEnd = Math.max(anchorSample, targetSample)
 
     drawWave(wave, begin)
   }
@@ -126,15 +125,17 @@ const button = document.querySelector('#play')
 button.onclick = () => {
   audioCtx.resume()
 
-  const startSample = selectionStart === null ? 0 : selectionStart
-  const endSample = selectionEnd === null ? 0 : selectionEnd
-  const durationSamples = endSample - startSample
-
-  const startSecs = startSample / buffer.sampleRate
-  const durationSecs = durationSamples / buffer.sampleRate
-
   const buf = audioCtx.createBufferSource()
   buf.buffer = buffer
   buf.connect(audioCtx.destination)
-  buf.start(0, startSecs, durationSecs)
+
+  if (selectionStart === null) {
+    buf.start()
+  } else {
+    const durationSamples = selectionEnd - selectionStart
+    const startSecs = selectionStart / buffer.sampleRate
+    const durationSecs = durationSamples / buffer.sampleRate
+  
+    buf.start(0, startSecs, durationSecs)  
+  }
 }
