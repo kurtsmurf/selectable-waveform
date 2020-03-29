@@ -92,6 +92,8 @@ const handleScrollCanvas = (e) => {
 canvas.onwheel = handleScrollCanvas
 
 canvas.onmousedown = (e) => {
+  e.preventDefault()
+
   selectionStart = null
   selectionEnd = null
 
@@ -103,6 +105,8 @@ canvas.onmousedown = (e) => {
   drawWave(wave, begin)
 
   window.onmousemove = (e) => {
+    e.preventDefault()
+
     const targetX = Math.floor(e.clientX - rect.left) 
     const target = begin + targetX
 
